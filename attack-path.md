@@ -11,19 +11,19 @@
   'primaryBorderColor':'#4b5563'
 }}}%%
 flowchart TD
-    subgraph P1 [Phase 1 &middot; Initial Access]
+    subgraph P1 [Phase 1 - Initial Access]
       direction LR
       A([Unauthenticated<br/>attacker]) --> B[Client-side-only<br/>PIN validation] --> C[Verbose error<br/>leaks environment]
     end
-    subgraph P2 [Phase 2 &middot; Credential Access I]
+    subgraph P2 [Phase 2 - Credential Access I]
       direction LR
       D[Assume ROLE-A<br/>insider of account] --> E[Over-permissive access<br/>to private registry] --> F[Secret in image<br/>build history]
     end
-    subgraph P3 [Phase 3 &middot; Lateral Movement / SSRF]
+    subgraph P3 [Phase 3 - Lateral Movement / SSRF]
       direction LR
       G[Authenticate to<br/>internal proxy] --> H{SSRF +<br/>no scheme check} --> I[file:// LFI<br/>read /proc/self/environ] --> J[ECS task metadata<br/>169.254.170.2]
     end
-    subgraph P4 [Phase 4 &middot; Impact]
+    subgraph P4 [Phase 4 - Impact]
       direction LR
       K[Assume ROLE-B] --> L([Enumerate ALL buckets<br/>objective bucket public])
     end

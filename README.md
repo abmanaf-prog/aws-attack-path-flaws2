@@ -1,4 +1,4 @@
-# AWS Attack Path: From an Exposed Serverless Endpoint to Account-Wide Data Access
+# AWS Attack Path: From an Exposed Serverless Endpoint to Account-Wide Storage Enumeration
 
 > A hands-on cloud attack-path study with detection and remediation, performed against an intentionally vulnerable AWS lab (serverless + container workloads). Written as an engagement-style report, not a lab walkthrough.
 
@@ -11,7 +11,9 @@
 | **Report type** | Engagement-style technical write-up |
 | **Date** | October 2026 |
 
-> **Environment & attribution.** This exercise was performed against **flAWS2.cloud**, the public AWS security training lab by Scott Piper / Summit Route. Because it is a shared learning resource, this report **withholds solution steps and specific answers** and generalizes resource names — it focuses on techniques, root causes, detection, and remediation. Account IDs, keys, tokens, and source IPs are replaced with placeholders (`TARGET_ACCOUNT`, `<ACCESS_KEY>`, `ATTACKER_IP`) as standard report hygiene.
+> **Environment & attribution.** This exercise was performed against **flAWS2.cloud**, the public AWS security training lab by Scott Piper / Summit Route. The report explains the **techniques and root causes** at a conceptual level, but deliberately withholds the lab's **turn-key answers** — exact endpoint URLs, the PIN value, recovered credentials/passwords, specific resource and object names, and copy-paste exploit strings — so it reads as an analysis rather than a step-by-step solution. Account IDs, keys, tokens, and source IPs are replaced with placeholders (`TARGET_ACCOUNT`, `<ACCESS_KEY>`, `ATTACKER_IP`) as standard report hygiene.
+>
+> *If you plan to try flaws2.cloud yourself, attempt it before reading on.*
 
 ---
 
@@ -37,6 +39,8 @@ Every weakness is a common, real-world cloud misconfiguration: client-side-only 
 
 **Tools:** `aws-cli`, `curl`, `docker`, `jq`, and AWS Athena (concept) for log analysis.
 
+**Note on tooling.** I worked manually on purpose, to keep the IAM/authorization reasoning visible. In a real engagement a framework such as **Pacu** would automate much of this — role/credential enumeration, permission and privilege-escalation path discovery, and bulk S3/ECR enumeration — reaching the same findings faster (e.g. `iam__enum_permissions`, `iam__privesc_scan`, `s3__download_bucket`). The trade-off is transparency: the manual path shows *why* each step works, which is the point of this write-up. Knowing both — the automated shortcut and the underlying mechanics — is the goal.
+
 ---
 
 ## 3. Attack path overview
@@ -52,19 +56,19 @@ The full chain, grouped by phase. See [`attack-path.md`](attack-path.md) for the
   'primaryBorderColor':'#4b5563'
 }}}%%
 flowchart TD
-    subgraph P1 [Phase 1 &middot; Initial Access]
+    subgraph P1 [Phase 1 - Initial Access]
       direction LR
       A([Unauthenticated<br/>attacker]) --> B[Client-side-only<br/>PIN validation] --> C[Verbose error<br/>leaks environment]
     end
-    subgraph P2 [Phase 2 &middot; Credential Access I]
+    subgraph P2 [Phase 2 - Credential Access I]
       direction LR
       D[Assume ROLE-A<br/>insider of account] --> E[Over-permissive access<br/>to private registry] --> F[Secret in image<br/>build history]
     end
-    subgraph P3 [Phase 3 &middot; Lateral Movement / SSRF]
+    subgraph P3 [Phase 3 - Lateral Movement / SSRF]
       direction LR
       G[Authenticate to<br/>internal proxy] --> H{SSRF +<br/>no scheme check} --> I[file:// LFI<br/>read /proc/self/environ] --> J[ECS task metadata<br/>169.254.170.2]
     end
-    subgraph P4 [Phase 4 &middot; Impact]
+    subgraph P4 [Phase 4 - Impact]
       direction LR
       K[Assume ROLE-B] --> L([Enumerate ALL buckets<br/>objective bucket public])
     end
@@ -150,18 +154,20 @@ Replaying the logs as an incident responder, the whole chain is visible. The dec
 | ID | Title | Severity | CWE | MITRE ATT&CK | Affected resource |
 |----|-------|----------|-----|--------------|-------------------|
 | [F-01](findings/F-01-client-side-validation.md) | Input validation enforced only client-side | Medium | CWE-602 | T1190 | Serverless API endpoint |
-| [F-02](findings/F-02-sensitive-data-exposure-serverless.md) | Role credentials disclosed via verbose error handling | High | CWE-209 / CWE-522 | T1552 | Serverless function |
+| [F-02](findings/F-02-sensitive-data-exposure-serverless.md) | Role credentials disclosed via verbose error handling | High | CWE-209 / CWE-526 | T1552 | Serverless function |
 | [F-03](findings/F-03-excessive-iam-permissions.md) | Over-privileged function execution role | Contributing¹ | CWE-250 / CWE-269 | — | IAM role (ROLE-A) |
 | [F-04](findings/F-04-public-container-registry.md) | Private container registry exposed to unauthorized principals | High | CWE-732 | T1530 (approx.)² | Container registry |
 | [F-05](findings/F-05-hardcoded-credentials-image.md) | Hard-coded credentials embedded in container image | High | CWE-798 | T1552.001 | Container image |
 | [F-06](findings/F-06-ssrf-metadata-credential-theft.md) | SSRF enabling file read and cloud-metadata credential theft | High (8.5) | CWE-918 | T1552.005 | Proxy service / IMDS |
-| [F-07](findings/F-07-public-object-storage.md) | Publicly readable object storage | Medium | CWE-732 | T1530 | Object storage buckets |
+| [F-07](findings/F-07-public-object-storage.md) | Publicly readable object storage | Medium | CWE-732 | T1530, T1619 | Object storage buckets |
 
 > ¹ **Contributing** = a weakness that amplifies the chain but isn't independently exploitable, so it carries no standalone CVSS.
 >
 > ² **Approximate** = ATT&CK has no technique that precisely covers pulling an image from an exposed container registry (T1530 covers cloud *storage objects*; T1613 covers *in-cluster* container discovery). T1530 is listed as the nearest fit.
 >
 > CVSS v3.1 vectors are hand-computed and reconciled with each finding's score/label. CWE and MITRE ATT&CK IDs were verified against their official sources; where a mapping is inexact (F-02 uses the parent T1552 for an environment-variable leak; F-04 is marked approximate), that is stated explicitly.
+>
+> **Chain-level technique:** replaying each of the two stolen credential sets to act in the account maps to **T1078.004 — Valid Accounts: Cloud Accounts**; the account-wide bucket *enumeration* maps to **T1619 — Cloud Storage Object Discovery**.
 
 ---
 

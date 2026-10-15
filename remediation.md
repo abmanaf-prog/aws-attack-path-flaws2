@@ -32,6 +32,8 @@ def is_safe(url: str) -> bool:
     return not any(ip in net for net in BLOCKED_NETS)
 ```
 
+> **Limitations of this snippet (read before copying it):** it is illustrative, not production-ready. (1) **TOCTOU / DNS rebinding** — it resolves the hostname once here, but the HTTP client resolves it *again* when it actually connects, so a hostname whose DNS flips between the two lookups bypasses the check. Robust defenses resolve once and make the fetcher connect to *that pinned IP* (or enforce the allowlist in the HTTP layer / egress firewall, not just in a pre-check). (2) It only handles **IPv4**; it must also reject IPv6 (including IPv4-mapped forms like `::ffff:169.254.169.254`). (3) Prefer a **positive allowlist** of permitted destinations over a denylist of bad ranges. The strongest control remains network egress policy that blocks the metadata endpoints regardless of application logic.
+
 ---
 
 ## P2 — Remove hard-coded secrets from images (Finding F-05)
@@ -105,12 +107,40 @@ def is_safe(url: str) -> bool:
 
 ---
 
+## P8 — Bind workload credentials to their environment (prevents credential replay)
+
+Both pivots in this chain succeeded because a stolen *workload* credential (a Lambda role, then an ECS task role) worked perfectly when replayed from the attacker's own machine. A **preventative** control that would have blocked **both** replays is to scope the role's trust/permissions with IAM **condition keys** so its credentials only function from inside the expected environment:
+
+```json
+// Illustrative: deny this workload role's calls unless they originate
+// from the workload's VPC (or an AWS service acting on its behalf).
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "DenyUseOutsideExpectedEnvironment",
+    "Effect": "Deny",
+    "Action": "*",
+    "Resource": "*",
+    "Condition": {
+      "StringNotEquals": { "aws:SourceVpc": "vpc-xxxxxxxx" },
+      "BoolIfExists":   { "aws:ViaAWSService": "false" }
+    }
+  }]
+}
+```
+
+- Use `aws:SourceVpc` / `aws:SourceVpce` (via VPC endpoints) for VPC-bound workloads, or `aws:SourceIp` scoped to the workload's known egress, and keep the `aws:ViaAWSService` exception so legitimate service-initiated calls still work. **Test carefully** — overly tight conditions can break valid flows (and some services don't propagate these keys). `verify` against your architecture.
+- This complements, not replaces, least privilege (P4): even a correctly-scoped role shouldn't be usable from an attacker's laptop.
+
+---
+
 ## Preventative guardrails (organization-wide)
 
 - **SCPs** to deny creation of public resources and to require IMDSv2 / block disabling of Block Public Access.
 - **GuardDuty** enabled across accounts.
 - **CloudTrail** (all regions, management + selective data events) delivered to a locked-down logging account.
+- **Bind workload credentials to their environment** with IAM condition keys (P8) so stolen credentials fail when replayed externally.
 - Alert on **workload-role credentials used from outside AWS** (see [`detection.md`](detection.md)).
 
 ### Priority order
-1. P1 (SSRF/metadata) → 2. P2 (image secrets) → 3. P3 (registry) → 4. P4 (least privilege) → 5. P5 (error handling) → 6. P6 (validation) → 7. P7 (public storage) → guardrails.
+1. P1 (SSRF/metadata) → 2. P2 (image secrets) → 3. P3 (registry) → 4. P4 (least privilege) → 5. P5 (error handling) → 6. P6 (validation) → 7. P7 (public storage) → 8. P8 (bind credentials to environment) → guardrails.

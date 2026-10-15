@@ -5,7 +5,7 @@
 | **Severity** | Medium |
 | **CVSS v3.1** | `AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N` → **5.3** *(C:L reflects low-sensitivity lab objects; raise to C:H → 7.5 if a bucket holds sensitive data)* |
 | **CWE** | CWE-732: Incorrect Permission Assignment for Critical Resource |
-| **MITRE ATT&CK** | T1530 — Data from Cloud Storage Object |
+| **MITRE ATT&CK** | T1530 — Data from Cloud Storage Object (reading objects); T1619 — Cloud Storage Object Discovery (the account-wide bucket enumeration) |
 | **Affected** | Object-storage buckets |
 
 ## Description & root cause
