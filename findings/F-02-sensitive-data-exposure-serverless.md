@@ -5,7 +5,7 @@
 | **Severity** | High |
 | **CVSS v3.1** | `AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:N/A:N` → **8.6** |
 | **CWE** | CWE-209: Generation of Error Message Containing Sensitive Information; CWE-522: Insufficiently Protected Credentials |
-| **MITRE ATT&CK** | T1552.001 — Unsecured Credentials: Credentials In Files/Env |
+| **MITRE ATT&CK** | T1552 — Unsecured Credentials (parent technique; the credentials were exposed via *environment variables*, which the file-specific sub-technique T1552.001 does not cover) |
 | **Affected** | Serverless function (execution role: ROLE-A) |
 
 ## Description & root cause

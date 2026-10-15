@@ -150,16 +150,18 @@ Replaying the logs as an incident responder, the whole chain is visible. The dec
 | ID | Title | Severity | CWE | MITRE ATT&CK | Affected resource |
 |----|-------|----------|-----|--------------|-------------------|
 | [F-01](findings/F-01-client-side-validation.md) | Input validation enforced only client-side | Medium | CWE-602 | T1190 | Serverless API endpoint |
-| [F-02](findings/F-02-sensitive-data-exposure-serverless.md) | Role credentials disclosed via verbose error handling | High | CWE-209 / CWE-522 | T1552.001 | Serverless function |
+| [F-02](findings/F-02-sensitive-data-exposure-serverless.md) | Role credentials disclosed via verbose error handling | High | CWE-209 / CWE-522 | T1552 | Serverless function |
 | [F-03](findings/F-03-excessive-iam-permissions.md) | Over-privileged function execution role | Contributing¹ | CWE-250 / CWE-269 | — | IAM role (ROLE-A) |
-| [F-04](findings/F-04-public-container-registry.md) | Private container registry exposed to unauthorized principals | High | CWE-732 | T1530 | Container registry |
+| [F-04](findings/F-04-public-container-registry.md) | Private container registry exposed to unauthorized principals | High | CWE-732 | T1530 (approx.)² | Container registry |
 | [F-05](findings/F-05-hardcoded-credentials-image.md) | Hard-coded credentials embedded in container image | High | CWE-798 | T1552.001 | Container image |
 | [F-06](findings/F-06-ssrf-metadata-credential-theft.md) | SSRF enabling file read and cloud-metadata credential theft | High (8.5) | CWE-918 | T1552.005 | Proxy service / IMDS |
 | [F-07](findings/F-07-public-object-storage.md) | Publicly readable object storage | Medium | CWE-732 | T1530 | Object storage buckets |
 
 > ¹ **Contributing** = a weakness that amplifies the chain but isn't independently exploitable, so it carries no standalone CVSS.
 >
-> Full CVSS v3.1 vectors + scores are in each finding file (hand-computed, label ↔ score ↔ vector reconciled; worth a final calculator sanity-check). CWE/ATT&CK mappings are my assessments — confirm before publishing.
+> ² **Approximate** = ATT&CK has no technique that precisely covers pulling an image from an exposed container registry (T1530 covers cloud *storage objects*; T1613 covers *in-cluster* container discovery). T1530 is listed as the nearest fit.
+>
+> CVSS v3.1 vectors are hand-computed and reconciled with each finding's score/label. CWE and MITRE ATT&CK IDs were verified against their official sources; where a mapping is inexact (F-02 uses the parent T1552 for an environment-variable leak; F-04 is marked approximate), that is stated explicitly.
 
 ---
 

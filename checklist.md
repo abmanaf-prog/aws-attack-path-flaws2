@@ -28,8 +28,8 @@ Run through this before publishing. Status reflects the current draft.
 | Check | Status | Action |
 |---|---|---|
 | CVSS v3.1 vectors & scores | ✅ Computed | Hand-computed per finding; label ↔ score ↔ vector reconciled (F-04 → 7.5/High, F-05 → 7.7, F-06 → 8.5/High, F-03 reclassified as contributing with no CVSS). Still worth a final FIRST.org sanity-check. |
-| CWE IDs correct | ⚠️ Verify | Confirm each CWE maps to the described weakness |
-| MITRE ATT&CK technique IDs | ⚠️ Verify | Confirm T-numbers (esp. T1552.005 metadata, T1190, T1078.004) |
+| CWE IDs correct | ✅ Verified | Each CWE checked against the weakness described (CWE-602, 209, 522, 250, 269, 732, 798, 918) |
+| MITRE ATT&CK technique IDs | ✅ Verified | Checked against attack.mitre.org. F-02 corrected to parent **T1552** (env-var leak, not .001/files); F-04 **T1530** marked *approximate* (no registry-specific technique); F-05 T1552.001, F-06 T1552.005, F-07/F-04 scope, T1190 confirmed |
 | CloudTrail event names | ⚠️ Verify | Confirm against real logs you captured; some actions produce **no** CloudTrail event (noted in detection.md) |
 | GuardDuty finding type strings | ⚠️ Verify | Confirm exact finding names for your account/region |
 | Example IAM/ECR/SCP policies | ⚠️ Verify | Lint and test in a sandbox before claiming they work |
