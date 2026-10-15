@@ -106,7 +106,7 @@ AWS_ACCESS_KEY_ID = <ACCESS_KEY (ASIA… = temporary STS credentials)>
 AWS_SECRET_ACCESS_KEY = <SECRET_KEY>
 AWS_SESSION_TOKEN = <SESSION_TOKEN>
 ```
-→ **Findings [F-01](findings/F-01-client-side-validation.md), [F-02](findings/F-02-sensitive-data-exposure-serverless.md).**
+→ **Findings [F‑01](findings/F-01-client-side-validation.md), [F‑02](findings/F-02-sensitive-data-exposure-serverless.md).**
 
 ### Step 3 — Pivot: assume the function's role
 Loading the leaked credentials and confirming identity:
@@ -122,7 +122,7 @@ The attacker is now an **insider of `TARGET_ACCOUNT`**, inheriting whatever `ROL
 aws ecr list-images --repository-name <REPO> --registry-id TARGET_ACCOUNT --region <REGION>
 # authenticate + pull the private image
 ```
-→ **Findings [F-03](findings/F-03-excessive-iam-permissions.md), [F-04](findings/F-04-public-container-registry.md).**
+→ **Findings [F‑03](findings/F-03-excessive-iam-permissions.md), [F‑04](findings/F-04-public-container-registry.md).**
 
 ### Step 5 — Loot the image: recover a hard-coded secret
 A container image carries its **build history**. Inspecting it exposed a basic-auth credential set in plaintext in a build instruction:
@@ -130,7 +130,7 @@ A container image carries its **build history**. Inspecting it exposed a basic-a
 docker history --no-trunc <IMAGE>
 # -> RUN htpasswd -b <path> <BASIC_AUTH_USER> <BASIC_AUTH_PASS>   (plaintext)
 ```
-→ **Finding [F-05](findings/F-05-hardcoded-credentials-image.md).**
+→ **Finding [F‑05](findings/F-05-hardcoded-credentials-image.md).**
 
 ### Step 6 — Access the internal service, find SSRF
 The recovered credentials unlocked an internal **proxy service** that fetched arbitrary URLs on the server side (SSRF). Reading the proxy's own source (recovered from the image) showed it passed user input straight into a URL-opening call **with no scheme restriction** — so `file://` worked, turning SSRF into **local file read (LFI)**.
@@ -142,7 +142,7 @@ aws sts get-caller-identity --profile role-b
 # -> arn:aws:sts::TARGET_ACCOUNT:assumed-role/ROLE-B/...
 aws s3 ls --profile role-b        # ROLE-B could enumerate all buckets
 ```
-→ **Findings [F-06](findings/F-06-ssrf-metadata-credential-theft.md), [F-07](findings/F-07-public-object-storage.md).**
+→ **Findings [F‑06](findings/F-06-ssrf-metadata-credential-theft.md), [F‑07](findings/F-07-public-object-storage.md).**
 
 ### Step 8 (Defender) — Detect the attack in CloudTrail
 Replaying the logs as an incident responder, the whole chain is visible. The decisive signal: **the same IAM role credentials appear from two different source IPs** — an AWS-internal address (legitimate execution) *and* an external internet address (`ATTACKER_IP`, the replayed stolen credentials). See [`detection.md`](detection.md).
@@ -153,13 +153,13 @@ Replaying the logs as an incident responder, the whole chain is visible. The dec
 
 | ID | Title | Severity | CWE | MITRE ATT&CK | Affected resource |
 |----|-------|----------|-----|--------------|-------------------|
-| [F-01](findings/F-01-client-side-validation.md) | Input validation enforced only client-side | Medium | CWE-602 | T1190 | Serverless API endpoint |
-| [F-02](findings/F-02-sensitive-data-exposure-serverless.md) | Role credentials disclosed via verbose error handling | High | CWE-209 / CWE-526 | T1552 | Serverless function |
-| [F-03](findings/F-03-excessive-iam-permissions.md) | Over-privileged function execution role | Contributing¹ | CWE-250 / CWE-269 | — | IAM role (ROLE-A) |
-| [F-04](findings/F-04-public-container-registry.md) | Private container registry exposed to unauthorized principals | High | CWE-732 | T1530 (approx.)² | Container registry |
-| [F-05](findings/F-05-hardcoded-credentials-image.md) | Hard-coded credentials embedded in container image | High | CWE-798 | T1552.001 | Container image |
-| [F-06](findings/F-06-ssrf-metadata-credential-theft.md) | SSRF enabling file read and cloud-metadata credential theft | High (8.5) | CWE-918 | T1552.005 | Proxy service / IMDS |
-| [F-07](findings/F-07-public-object-storage.md) | Publicly readable object storage | Medium | CWE-732 | T1530, T1619 | Object storage buckets |
+| [F‑01](findings/F-01-client-side-validation.md) | Input validation enforced only client-side | Medium | CWE-602 | T1190 | Serverless API endpoint |
+| [F‑02](findings/F-02-sensitive-data-exposure-serverless.md) | Role credentials disclosed via verbose error handling | High | CWE-209 / CWE-526 | T1552 | Serverless function |
+| [F‑03](findings/F-03-excessive-iam-permissions.md) | Over-privileged function execution role | Contributing¹ | CWE-250 / CWE-269 | — | IAM role (ROLE-A) |
+| [F‑04](findings/F-04-public-container-registry.md) | Private container registry exposed to unauthorized principals | High | CWE-732 | T1530 (approx.)² | Container registry |
+| [F‑05](findings/F-05-hardcoded-credentials-image.md) | Hard-coded credentials embedded in container image | High | CWE-798 | T1552.001 | Container image |
+| [F‑06](findings/F-06-ssrf-metadata-credential-theft.md) | SSRF enabling file read and cloud-metadata credential theft | High (8.5) | CWE-918 | T1552.005 | Proxy service / IMDS |
+| [F‑07](findings/F-07-public-object-storage.md) | Publicly readable object storage | Medium | CWE-732 | T1530, T1619 | Object storage buckets |
 
 > ¹ **Contributing** = a weakness that amplifies the chain but isn't independently exploitable, so it carries no standalone CVSS.
 >
