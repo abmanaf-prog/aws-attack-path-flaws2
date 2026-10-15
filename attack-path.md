@@ -3,6 +3,13 @@
 ## Full chain
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {
+  'fontSize':'14px',
+  'lineColor':'#6b7280',
+  'primaryColor':'#eef2f7',
+  'primaryTextColor':'#111827',
+  'primaryBorderColor':'#4b5563'
+}}}%%
 flowchart TD
     A([Unauthenticated attacker]) --> B[Serverless PIN endpoint<br/>validation only in client-side JS]
     B -->|direct API request with<br/>unexpected input| C[Function error handler<br/>returns full environment]
@@ -16,11 +23,13 @@ flowchart TD
     J -->|leaks ROLE-B credentials| K[Assume ROLE-B]
     K -->|ListAllMyBuckets allowed| L([Enumerate ALL buckets<br/>objective bucket itself public])
 
-    style C fill:#ffdddd,stroke:#cc0000
-    style F fill:#ffdddd,stroke:#cc0000
-    style H fill:#ffdddd,stroke:#cc0000
-    style J fill:#ffdddd,stroke:#cc0000
-    style L fill:#ddffdd,stroke:#00aa00
+    classDef step fill:#eef2f7,stroke:#4b5563,color:#111827;
+    classDef danger fill:#fde2e2,stroke:#cc0000,color:#111827;
+    classDef goal fill:#d7f5d7,stroke:#00870e,color:#111827;
+
+    class A,B,D,E,G,I,K step;
+    class C,F,H,J danger;
+    class L goal;
 ```
 
 ## Narrative (one paragraph)
