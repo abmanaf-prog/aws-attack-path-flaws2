@@ -23,6 +23,8 @@ Error, malformed input
 ```
 The `ASIA…` key prefix confirmed these were **temporary STS credentials** for the function's role. Loading them and calling `aws sts get-caller-identity` returned `assumed-role/ROLE-A/...`.
 
+![Serverless function returning its environment variables, with the access key, secret key, and session token redacted to placeholders](../evidence/F-02-env-var-leak.png)
+
 ## Impact
 Direct, unauthenticated theft of a workload identity. The attacker became an insider of `TARGET_ACCOUNT` and inherited all of ROLE-A's permissions — the pivot that enabled the rest of the chain.
 

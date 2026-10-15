@@ -37,6 +37,8 @@ ORDER BY eventtime;
 ```
 During the engagement this returned exactly the attacker's external IP using ROLE-A and ROLE-B — the credential theft, caught.
 
+![CloudTrail timeline: the same level1 role appears from its legitimate execution IP (CreateLogStream) and from an external attacker IP performing S3/ECR actions; level3 then lists buckets from the attacker IP](evidence/defender-timeline.png)
+
 ### Sigma-style rule (concept) — `verify` field names against your log schema
 ```yaml
 title: IAM Role Credentials Used From Outside AWS

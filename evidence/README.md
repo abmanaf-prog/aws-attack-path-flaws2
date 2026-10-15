@@ -1,21 +1,19 @@
 # Evidence
 
-Drop **sanitized** screenshots / terminal captures here and reference them from the finding files
-(e.g. `![env var leak](../evidence/F-02-env-var-leak.png)`).
+Redacted captures supporting this report. All AWS **account IDs, access/secret keys, session tokens, and source IPs** are replaced with placeholders (`TARGET_ACCOUNT`, `<ACCESS_KEY>`, `<SECRET_KEY>`, `<SESSION_TOKEN>`, `ATTACKER_IP`, `LEGIT_EXEC_IP`). Original unredacted captures are kept out of git.
 
-## Redact before committing anything here
-Remove or blur: AWS **account IDs**, **access/secret keys**, **session tokens**, **source IPs**,
-full **resource names/ARNs**, and any **lab-answer URLs or secret values**. Crop to just the
-relevant line(s).
+## 1. Serverless environment-variable credential leak — Finding [F-02](../findings/F-02-sensitive-data-exposure-serverless.md)
 
-> Keep original **unredacted** captures OUT of git. Put them in a local `raw-evidence/` folder —
-> it is already in `.gitignore`.
+Sending unexpected input to the internet-facing serverless endpoint makes the function's error handler return its **entire runtime environment** — including the execution role's temporary credentials (masked below).
 
-## Suggested files
-| File | Shows |
-|---|---|
-| `F-02-env-var-leak.png` | serverless function returning env vars (keys redacted) |
-| `F-04-ecr-list-pull.png` | listing/pulling the exposed image |
-| `F-05-docker-history.png` | hard-coded credential in build history (password blurred) |
-| `F-06-metadata-creds.png` | SSRF → metadata credential response (keys redacted) |
-| `defender-timeline.png` | CloudTrail timeline showing role used from an external IP |
+![Serverless function returning its environment variables; the access key, secret key, and session token are redacted to placeholders](F-02-env-var-leak.png)
+
+## 2. Defender — CloudTrail timeline of the intrusion — see [`detection.md`](../detection.md)
+
+The decisive signal: the **same `level1` role** appears both from its legitimate execution address (`LEGIT_EXEC_IP`, `CreateLogStream`) **and** from an external `ATTACKER_IP` performing S3/ECR actions (`ListObjects`, `ListImages`, `BatchGetImage`, `GetDownloadUrlForLayer`) — i.e. stolen credentials replayed from outside AWS. The `level3` role then lists buckets from the same attacker IP.
+
+![CloudTrail events showing IAM role credentials used from an external attacker IP alongside the legitimate execution IP](defender-timeline.png)
+
+---
+
+*Adding new captures? Redact account IDs, keys, tokens, source IPs, full ARNs, and any lab-answer values first (prefer masking in-terminal with `sed`/`jq` over blurring the image). Keep originals in a local `raw-evidence/` folder — it is already git-ignored.*
