@@ -11,17 +11,26 @@
   'primaryBorderColor':'#4b5563'
 }}}%%
 flowchart TD
-    A([Unauthenticated attacker]) --> B[Serverless PIN endpoint<br/>validation only in client-side JS]
-    B -->|direct API request with<br/>unexpected input| C[Function error handler<br/>returns full environment]
-    C -->|leaks ROLE-A credentials<br/>from env vars| D[Assume ROLE-A<br/>= insider of TARGET_ACCOUNT]
-    D -->|over-permissive policy +<br/>unneeded ECR rights| E[Private container registry]
-    E -->|pull private image| F[Inspect image build history]
-    F -->|hard-coded basic-auth<br/>credentials in a RUN layer| G[Authenticate to internal proxy service]
-    G -->|SSRF: proxy fetches<br/>arbitrary URLs| H{No URL scheme<br/>restriction}
-    H -->|file:// = LFI| I[Read /proc/self/environ]
-    I -->|recover metadata<br/>credentials path| J[ECS task metadata<br/>169.254.170.2]
-    J -->|leaks ROLE-B credentials| K[Assume ROLE-B]
-    K -->|ListAllMyBuckets allowed| L([Enumerate ALL buckets<br/>objective bucket itself public])
+    subgraph P1 [Phase 1 &middot; Initial Access]
+      direction LR
+      A([Unauthenticated<br/>attacker]) --> B[Client-side-only<br/>PIN validation] --> C[Verbose error<br/>leaks environment]
+    end
+    subgraph P2 [Phase 2 &middot; Credential Access I]
+      direction LR
+      D[Assume ROLE-A<br/>insider of account] --> E[Over-permissive access<br/>to private registry] --> F[Secret in image<br/>build history]
+    end
+    subgraph P3 [Phase 3 &middot; Lateral Movement / SSRF]
+      direction LR
+      G[Authenticate to<br/>internal proxy] --> H{SSRF +<br/>no scheme check} --> I[file:// LFI<br/>read /proc/self/environ] --> J[ECS task metadata<br/>169.254.170.2]
+    end
+    subgraph P4 [Phase 4 &middot; Impact]
+      direction LR
+      K[Assume ROLE-B] --> L([Enumerate ALL buckets<br/>objective bucket public])
+    end
+
+    C -->|ROLE-A credentials| D
+    F -->|hard-coded credentials| G
+    J -->|ROLE-B credentials| K
 
     classDef step fill:#eef2f7,stroke:#4b5563,color:#111827;
     classDef danger fill:#fde2e2,stroke:#cc0000,color:#111827;
