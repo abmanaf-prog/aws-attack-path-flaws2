@@ -2,7 +2,7 @@
 
 > A hands-on cloud attack-path study with detection and remediation, performed against an intentionally vulnerable AWS lab (serverless + container workloads). Written as an engagement-style report, not a lab walkthrough.
 
-**Author:** ABManaf (CPTS) · **Discipline:** Offensive Security / Cloud
+**Author:** ABManaf · **Discipline:** Offensive Security / Cloud
 **Environment:** Intentionally vulnerable AWS training lab (serverless Lambda + ECS Fargate)
 **Date:** 2026-10
 
