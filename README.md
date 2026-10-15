@@ -36,24 +36,45 @@ Every weakness is a common, real-world cloud misconfiguration: client-side-only 
 
 ## 3. Attack path overview
 
-See [`attack-path.md`](attack-path.md) for the full Mermaid diagram.
+The full chain, grouped by phase. See [`attack-path.md`](attack-path.md) for the narrative and phase mapping.
 
-```
-Unauthenticated
-   │  (1) client-side-only input validation  ──► bypass with direct API request
-   ▼
-Serverless function  ──► (2) verbose error dumps environment ──► leaks ROLE-A credentials
-   │
-   ▼  (assume ROLE-A)
-Private container registry  ──► (3) over-permissive policy ──► pull private image
-   │
-   ▼  (4) image build history ──► hard-coded basic-auth credentials
-Internal proxy service  ──► (5) SSRF + file:// (LFI) ──► read /proc/self/environ
-   │
-   ▼  (metadata path from env) ──► ECS task metadata service ──► leaks ROLE-B credentials
-   │
-   ▼  (assume ROLE-B)
-Account object storage  ──► enumerate ALL buckets (+ read the objective bucket, itself public)
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {
+  'fontSize':'14px',
+  'lineColor':'#6b7280',
+  'primaryColor':'#eef2f7',
+  'primaryTextColor':'#111827',
+  'primaryBorderColor':'#4b5563'
+}}}%%
+flowchart TD
+    subgraph P1 [Phase 1 &middot; Initial Access]
+      direction LR
+      A([Unauthenticated<br/>attacker]) --> B[Client-side-only<br/>PIN validation] --> C[Verbose error<br/>leaks environment]
+    end
+    subgraph P2 [Phase 2 &middot; Credential Access I]
+      direction LR
+      D[Assume ROLE-A<br/>insider of account] --> E[Over-permissive access<br/>to private registry] --> F[Secret in image<br/>build history]
+    end
+    subgraph P3 [Phase 3 &middot; Lateral Movement / SSRF]
+      direction LR
+      G[Authenticate to<br/>internal proxy] --> H{SSRF +<br/>no scheme check} --> I[file:// LFI<br/>read /proc/self/environ] --> J[ECS task metadata<br/>169.254.170.2]
+    end
+    subgraph P4 [Phase 4 &middot; Impact]
+      direction LR
+      K[Assume ROLE-B] --> L([Enumerate ALL buckets<br/>objective bucket public])
+    end
+
+    C -->|ROLE-A credentials| D
+    F -->|hard-coded credentials| G
+    J -->|ROLE-B credentials| K
+
+    classDef step fill:#eef2f7,stroke:#4b5563,color:#111827;
+    classDef danger fill:#fde2e2,stroke:#cc0000,color:#111827;
+    classDef goal fill:#d7f5d7,stroke:#00870e,color:#111827;
+
+    class A,B,D,E,G,I,K step;
+    class C,F,H,J danger;
+    class L goal;
 ```
 
 Two credential thefts, each from a different weakness, chained into account-wide storage enumeration.
