@@ -2,9 +2,14 @@
 
 > A hands-on cloud attack-path study with detection and remediation, performed against an intentionally vulnerable AWS lab (serverless + container workloads). Written as an engagement-style report, not a lab walkthrough.
 
-**Author:** ABManaf · **Discipline:** Offensive Security / Cloud
-**Environment:** Intentionally vulnerable AWS training lab (serverless Lambda + ECS Fargate)
-**Date:** 2026-10
+| | |
+|---|---|
+| **Author** | ABManaf |
+| **Discipline** | Offensive Security — Cloud Penetration Testing |
+| **Assessment type** | Black-box attack-path assessment (attacker + defender perspectives) |
+| **Target environment** | Intentionally vulnerable AWS training lab — serverless (Lambda) and container (ECS Fargate) workloads |
+| **Report type** | Engagement-style technical write-up |
+| **Date** | October 2026 |
 
 > **Environment & attribution.** This exercise was performed against **flAWS2.cloud**, the public AWS security training lab by Scott Piper / Summit Route. Because it is a shared learning resource, this report **withholds solution steps and specific answers** and generalizes resource names — it focuses on techniques, root causes, detection, and remediation. Account IDs, keys, tokens, and source IPs are replaced with placeholders (`TARGET_ACCOUNT`, `<ACCESS_KEY>`, `ATTACKER_IP`) as standard report hygiene.
 
