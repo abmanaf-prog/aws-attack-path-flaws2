@@ -1,0 +1,16 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Keep ORIGINAL (unredacted) evidence OUT of git — commit only redacted copies.
+raw-evidence/
+*.unredacted.*
+*-unredacted.*
+*.orig
+
+# Local scratch
+*.tmp
+*.bak
